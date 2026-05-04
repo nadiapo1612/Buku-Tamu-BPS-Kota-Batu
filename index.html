@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buku Tamu - BPS Kota Batu</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* CSS Untuk Tampilan yang Rapi dan Profesional */
+        :root {
+            --primary-color: #0056b3;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* background-color: var(--bg-color); */ /* Dinonaktifkan agar background foto terlihat */
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative; 
+            overflow-x: hidden; /* Tambahan agar tidak muncul scrollbar horizontal */
+        }
+
+        /* === KODE TAMBAHAN UNTUK BACKGROUND FOTO OPACITY 50% === */
+        body::before {
+            content: "";
+            background-image: url('background.jpg'); /* Ganti 'background.jpg' dengan nama file foto Anda */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            opacity: 0.3; /* Opacity 50% untuk background saja */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Memastikan background berada di lapisan paling belakang */
+        }
+
+        /* Widget Jam & Tanggal */
+        #datetime-widget {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        /* Tombol */
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #004494;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Formulir */
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="tel"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        /* Menyembunyikan elemen secara default */
+        .hidden {
+            display: none !important;
+        }
+
+        /* === CUSTOM DROPDOWN CSS === */
+        .custom-dropdown-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            margin-top: 5px;
+        }
+
+        .dropdown-item {
+            padding: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        /* ============================ */
+
+        /* Modal Rating Emoji */
+        #rating-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .emoji-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .emoji-btn {
+            font-size: 40px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: auto;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .emoji-btn:hover {
+            transform: scale(1.3);
+            background: none;
+        }
+
+        .emoji-label {
+            font-size: 12px;
+            display: block;
+            margin-top: 5px;
+            color: #666;
+        }
+
+        /* Footer Kontak */
+        .footer-contact {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+            background-color: var(--card-bg);
+            padding: 20px 25px;
+            border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .footer-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .footer-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #555;
+        }
+
+        .footer-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer-item a:hover {
+            text-decoration: underline;
+        }
+
+        /* === CSS UNTUK TOMBOL GEMBOK ADMIN === */
+        .admin-trigger {
+            position: fixed;
+            bottom: 15px; right: 15px;
+            width: 40px; height: 40px;
+            background-color: rgba(0, 0, 0, 0.05); 
+            color: rgba(0, 0, 0, 0.1); 
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .admin-trigger:hover {
+            background-color: rgba(0, 86, 179, 0.1); 
+            color: var(--primary-color); 
+            border-color: rgba(0, 86, 179, 0.3);
+        }
+
+        /* === CSS MODAL PIN ADMIN === */
+        #admin-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .admin-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 300px;
+        }
+
+        #pin-input {
+            width: 100%;
+            font-size: 28px;
+            text-align: center;
+            letter-spacing: 15px;
+            padding: 10px;
+            margin-top: 15px;
+            border: 2px solid var(--primary-color);
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+
+        .btn-cancel {
+            background-color: #dc3545;
+            margin-top: 15px;
+            padding: 10px;
+        }
+
+        .btn-cancel:hover {
+            background-color: #c82333;
+        }
+
+        /* === CSS CUSTOM ALERT MODAL (PENGGANTI POPUP BROWSER) === */
+        #custom-alert-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000; /* Paling atas */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="datetime-widget">
+        <span id="tanggal">Memuat tanggal...</span> | <span id="jam">--:--:--</span> WIB
+    </div>
+
+    <div id="welcome-page" class="container">
+        <img src="logo bps.png" alt="Logo Kantor" width="150" style="margin-bottom: 15px;">
+        <h1>Selamat Datang di<br>BPS Kota Batu</h1>
+        <p>Silakan isi buku tamu digital kami untuk melanjutkan layanan.</p>
+        <button onclick="lanjutKeForm()">Lanjutkan</button>
+    </div>
+
+    <div id="form-page" class="container hidden">
+        <img src="logo bps.png" alt="Logo BPS" width="100" style="margin-bottom: 10px;">
+        <h1 style="margin-top: 10px; margin-bottom: 25px;">Buku Tamu Digital</h1>
+        
+        <form id="bukuTamuForm" autocomplete="off">
+            <div class="form-group">
+                <label for="nama">Nama Pengunjung</label>
+                <input type="text" id="nama" name="nama" required placeholder="Masukkan nama lengkap Anda" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="pekerjaan">Pekerjaan</label>
+                <input type="text" id="pekerjaan" name="pekerjaan" required placeholder="Masukkan pekerjaan Anda" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="institusi">Asal Institusi</label>
+                <input type="text" id="institusi" name="institusi" required placeholder="Instansi / Universitas / Umum" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="nohp">Nomor HP / WhatsApp</label>
+                <input type="tel" id="nohp" name="nohp" required placeholder="Contoh: 08123456789" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="keperluan">Keperluan</label>
+                <select id="keperluan" name="keperluan" required onchange="cekKeperluan()">
+                    <option value="" disabled selected>-- Pilih Keperluan --</option>
+                    <option value="pst">Ke Pelayanan Statistik Terpadu (PST)</option>
+                    <option value="pegawai">Bertemu Pegawai</option>
+                    <option value="lainnya">Lainnya...</option>
+                </select>
+            </div>
+
+            <div class="form-group hidden" id="div-lainnya">
+                <label for="keperluanLainnya">Tuliskan Keperluan Anda</label>
+                <input type="text" id="keperluanLainnya" name="keperluanLainnya" placeholder="Ketik keperluan Anda di sini" autocomplete="off">
+            </div>
+
+            <div class="form-group hidden" id="div-pegawai">
+                <label for="namaPegawai">Cari / Pilih Pegawai yang ingin ditemui</label>
+                <div class="custom-dropdown-container">
+                    <input type="text" id="namaPegawai" name="namaPegawai" placeholder="-- Ketik nama pegawai --" autocomplete="off">
+                    <div id="daftarPegawaiList" class="dropdown-list hidden"></div>
+                </div>
+            </div>
+
+            <button type="submit" id="btnSubmit">Kirim Form</button>
+        </form>
+    </div>
+
+    <div class="footer-contact">
+        <div class="footer-row">
+            <div class="footer-item">
+                <img src="logo-whatsapp.png" alt="WA" width="20"> 
+                <a href="https://wa.me/6281234567890" target="_blank">0812-3456-7890</a>
+            </div>
+            <div class="footer-item">
+                <img src="logo-ig.png" alt="IG" width="20"> 
+                <a href="https://instagram.com/bpskotabatu" target="_blank">@bpskotabatu</a>
+            </div>
+        </div>
+        <div class="footer-row">
+            <div class="footer-item">
+                <img src="4.png" alt="Telp" width="20"> 
+                <a href="tel:0341512575">(0341) 512575</a>
+            </div>
+            <div class="footer-item">
+                <img src="logo-email.png" alt="Email" width="20"> 
+                <a href="mailto:bps3579@bps.go.id">bps3579@bps.go.id</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="rating-modal" class="hidden">
+        <div class="modal-content">
+            <h2>Terima Kasih!</h2>
+            <p>Bagaimana pengalaman Anda dengan layanan ruang tunggu kami hari ini?</p>
+            <div class="emoji-container">
+                <div><button type="button" class="emoji-btn" onclick="prosesAkhir('Kecewa')">😞</button><span class="emoji-label">Kurang</span></div>
+                <div><button type="button" class="emoji-btn" onclick="prosesAkhir('Biasa')">😐</button><span class="emoji-label">Cukup</span></div>
+                <div><button type="button" class="emoji-btn" onclick="prosesAkhir('Puas')">🤩</button><span class="emoji-label">Sangat Puas</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-trigger" onclick="bukaAdminModal()">
+        <i class="fas fa-lock"></i>
+    </div>
+
+    <div id="admin-modal" class="hidden">
+        <div class="admin-content">
+            <h2 style="margin-top:0; color:var(--primary-color);">Akses Admin</h2>
+            <p style="font-size:14px; color:#666;">Masukkan 4 digit PIN:</p>
+            <input type="password" id="pin-input" maxlength="4" autocomplete="off" oninput="cekPin(this.value)">
+            <button type="button" class="btn-cancel" onclick="tutupAdminModal()">Batal</button>
+        </div>
+    </div>
+
+    <div id="custom-alert-modal" class="hidden">
+        <div class="modal-content">
+            <h2 id="custom-alert-title" style="color: var(--primary-color); margin-top: 0; font-size: 20px;">Pemberitahuan</h2>
+            <p id="custom-alert-text" style="font-size: 15px; margin-bottom: 20px; white-space: pre-wrap; line-height: 1.5; color: var(--text-color);"></p>
+            <button type="button" id="custom-alert-btn">Tutup</button>
+        </div>
+    </div>
+
+    <script>
+        // --- FUNGSI CUSTOM ALERT (PENGGANTI alert() BAWAAN) ---
+        function tampilkanCustomAlert(pesan, callback) {
+            document.getElementById('custom-alert-text').innerText = pesan;
+            const modal = document.getElementById('custom-alert-modal');
+            modal.classList.remove('hidden');
+            
+            const btn = document.getElementById('custom-alert-btn');
+            btn.onclick = function() {
+                modal.classList.add('hidden');
+                if (callback) {
+                    callback();
+                }
+            };
+        }
+
+        // --- JAM & TANGGAL REAL-TIME ---
+        function updateWaktu() {
+            const sekarang = new Date();
+            const opsiTanggal = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const jam = sekarang.getHours().toString().padStart(2, '0');
+            const menit = sekarang.getMinutes().toString().padStart(2, '0');
+            const detik = sekarang.getSeconds().toString().padStart(2, '0');
+            
+            document.getElementById('tanggal').innerText = sekarang.toLocaleDateString('id-ID', opsiTanggal);
+            document.getElementById('jam').innerText = `${jam}:${menit}:${detik}`;
+        }
+        setInterval(updateWaktu, 1000);
+        updateWaktu(); 
+
+        // --- DAFTAR PEGAWAI & LOGIKA DROPDOWN ---
+        const daftarPegawai = ["Adam Mahmud, SE, MM", "Adina Astasia, S.ST, M.Stat", "Arif Nugroho Wicaksono, S.Si", "Dhika Devara Prihastiono, S.ST.", "Dwi Esti Kurniasih, S.Si, M.AP, M.P.P.", "Eka Cahyani, S.ST", "Eko Wibowo, SE", "Fx. Gugus Febri Putranto, S.ST, ME", "Gatot Suharmoko, M.Si", "Herlina Prasetyowati Sambodo, S.ST, M.Si", "Ir. Yuniarni Erry Wahyuti, MM", "Khoirul Anam", "Lutfia Aprilliani", "Muhammad Arief Nurohman, S.Si", "Mulia Estiwilaras, SM", "Nurlaila Oktarahmayanti, S.ST", "Rahmita Candra Dewi, S.Pd.", "Singgih Wicaksono, SE", "Sulistyono, SE", "Wahyu Andri Wijianto", "Wahyu Mega Alfazip, A.Md.Kb.N."];
+
+        const inputPegawai = document.getElementById('namaPegawai');
+        const listContainer = document.getElementById('daftarPegawaiList');
+
+        function renderDaftar(pegawaiArray) {
+            listContainer.innerHTML = '';
+            pegawaiArray.forEach(nama => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.innerText = nama;
+                item.addEventListener('click', function() {
+                    inputPegawai.value = nama;
+                    listContainer.classList.add('hidden');
+                });
+                listContainer.appendChild(item);
+            });
+        }
+        renderDaftar(daftarPegawai);
+
+        inputPegawai.addEventListener('focus', function() { listContainer.classList.remove('hidden'); });
+        document.addEventListener('click', function(e) {
+            if (!inputPegawai.contains(e.target) && !listContainer.contains(e.target)) {
+                listContainer.classList.add('hidden');
+            }
+        });
+
+        inputPegawai.addEventListener('input', function() {
+            const kataKunci = this.value.toLowerCase();
+            const cocok = [];
+            const tidakCocok = [];
+            daftarPegawai.forEach(nama => {
+                if (nama.toLowerCase().includes(kataKunci)) cocok.push(nama);
+                else tidakCocok.push(nama);
+            });
+            renderDaftar(cocok.concat(tidakCocok));
+        });
+
+        // --- FUNGSI HALAMAN & FORMULIR ---
+        function lanjutKeForm() {
+            document.getElementById('welcome-page').classList.add('hidden');
+            document.getElementById('form-page').classList.remove('hidden');
+        }
+
+        function cekKeperluan() {
+            const keperluan = document.getElementById('keperluan').value;
+            const divLainnya = document.getElementById('div-lainnya');
+            const divPegawai = document.getElementById('div-pegawai');
+            const inputLainnya = document.getElementById('keperluanLainnya');
+
+            divLainnya.classList.add('hidden');
+            divPegawai.classList.add('hidden');
+            inputPegawai.required = false;
+            inputLainnya.required = false;
+
+            if (keperluan === 'lainnya') {
+                divLainnya.classList.remove('hidden');
+                inputLainnya.required = true;
+            } else if (keperluan === 'pegawai') {
+                divPegawai.classList.remove('hidden');
+                inputPegawai.required = true;
+                inputPegawai.value = "";
+                renderDaftar(daftarPegawai);
+            }
+        }
+
+        let dataTamu = {};
+
+        document.getElementById('bukuTamuForm').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+            
+            if (document.getElementById('keperluan').value === 'pegawai') {
+                if (!inputPegawai.value) {
+                    tampilkanCustomAlert("Silakan pilih atau ketik nama pegawai yang ingin ditemui.", null);
+                    return;
+                }
+            }
+
+            // CEK JIKA KEPERLUAN PST
+            if (document.getElementById('keperluan').value === 'pst') {
+                // Tampilkan Custom Alert, lalu jalankan fungsi lanjutkanSubmit setelah tombol ditutup
+                tampilkanCustomAlert("Silakan bertanya kepada resepsionis untuk panduan mengisi Buku Tamu PST.", lanjutkanSubmit);
+            } else {
+                lanjutkanSubmit();
+            }
+
+            function lanjutkanSubmit() {
+                const btnSubmit = document.getElementById('btnSubmit');
+                btnSubmit.innerText = "Memproses...";
+                btnSubmit.disabled = true;
+
+                dataTamu = {
+                    nama: document.getElementById('nama').value,
+                    pekerjaan: document.getElementById('pekerjaan').value,
+                    institusi: document.getElementById('institusi').value,
+                    nohp: document.getElementById('nohp').value,
+                    keperluan: document.getElementById('keperluan').value,
+                    namaPegawaiInput: document.getElementById('namaPegawai').value, 
+                    keperluanLainnya: document.getElementById('keperluanLainnya').value,
+                    waktu: new Date().toLocaleString('id-ID')
+                };
+
+                setTimeout(() => {
+                    document.getElementById('form-page').classList.add('hidden');
+                    document.getElementById('rating-modal').classList.remove('hidden');
+                }, 500);
+            }
+        });
+
+        function prosesAkhir(rating) {
+            const googleAppsScriptURL = "https://script.google.com/macros/s/AKfycby7NMGjQkV0BUuhsmmLSIZAYmV_CHOhiBJimVmQqER1Wy_eO1ZNZynz9HHcAtFS6E_CNQ/exec"; 
+
+            const finalData = new FormData();
+            finalData.append('waktu', dataTamu.waktu);
+            finalData.append('nama', dataTamu.nama);
+            finalData.append('pekerjaan', dataTamu.pekerjaan);
+            finalData.append('institusi', dataTamu.institusi);
+            finalData.append('nohp', dataTamu.nohp);
+            finalData.append('keperluan', dataTamu.keperluan);
+            
+            const namaPegawaiTeks = dataTamu.namaPegawaiInput ? dataTamu.namaPegawaiInput : "-";
+            finalData.append('namaPegawai', namaPegawaiTeks);
+            finalData.append('keperluanLainnya', dataTamu.keperluanLainnya || "-");
+            finalData.append('rating', rating); 
+
+            fetch(googleAppsScriptURL, { method: 'POST', body: finalData, mode: 'no-cors' })
+            .then(() => console.log('Sukses'))
+            .catch(error => console.error('Error:', error));
+
+            document.getElementById('rating-modal').classList.add('hidden');
+
+            // --- GABUNGKAN PESAN AGAR MUNCUL 1 KALI ALERT SAJA ---
+            let pesanAkhir = `Terima kasih atas penilaian Anda (${rating})!\n\n`;
+            const keperluan = dataTamu.keperluan;
+            let callbackAksi;
+
+            if (keperluan === 'pst') {
+                pesanAkhir += "Anda akan dialihkan ke halaman Perpustakaan / PST BPS.";
+                callbackAksi = function() {
+                    window.location.href = "https://perpustakaan.bps.go.id/apps/"; 
+                };
+            } else if (keperluan === 'pegawai') {
+                pesanAkhir += `Data Tamu atas nama ${dataTamu.nama} berhasil disimpan.\nSilakan tunggu, Anda akan segera dihubungkan dengan ${namaPegawaiTeks}.`;
+                callbackAksi = function() {
+                    location.reload();
+                };
+            } else if (keperluan === 'lainnya') {
+                pesanAkhir += `Data Tamu atas nama ${dataTamu.nama} berhasil disimpan.\nKeperluan: ${dataTamu.keperluanLainnya}`;
+                callbackAksi = function() {
+                    location.reload();
+                };
+            }
+
+            // Tampilkan alert 1 kali
+            tampilkanCustomAlert(pesanAkhir, callbackAksi);
+        }
+
+        // --- FUNGSI JALAN PINTAS ADMIN ---
+        function bukaAdminModal() {
+            document.getElementById('admin-modal').classList.remove('hidden');
+            document.getElementById('pin-input').value = "";
+            document.getElementById('pin-input').focus();
+        }
+
+        function tutupAdminModal() {
+            document.getElementById('admin-modal').classList.add('hidden');
+        }
+
+        function cekPin(pin) {
+            if (pin.length === 4) {
+                if (pin === "3579") {
+                    window.location.href = "admin.html";
+                } else {
+                    tampilkanCustomAlert("Akses Ditolak: PIN Salah!", function() {
+                        document.getElementById('pin-input').value = "";
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

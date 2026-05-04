@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - BPS Kota Batu</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --sidebar-bg: #1a252f;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Kiri */
+        .sidebar {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 30px;
+            padding: 0 10px;
+            border-bottom: 1px solid #34495e;
+            padding-bottom: 20px;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: #bdc3c7;
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        .menu-btn:hover, .menu-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Konten Utama */
+        .main-content {
+            flex: 1;
+            padding: 20px 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Kartu Ringkasan (Top) */
+        .summary-cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            flex: 1;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            text-align: center;
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .card h3 {
+            margin: 0;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .card p {
+            margin: 10px 0 0 0;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        /* Area Grafik */
+        .chart-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .charts-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .chart-half {
+            flex: 1;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .export-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Tabel Data */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            align-items: center;
+        }
+
+        .controls input, .controls select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        /* Tombol Bersihkan Filter */
+        .btn-reset {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn-reset:hover {
+            background-color: #5a6268;
+        }
+
+        .export-group {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .export-group button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-excel { background-color: #1D6F42; }
+        .btn-pdf { background-color: #e74c3c; }
+
+        /* Style untuk info jumlah data */
+        .data-info {
+            font-size: 14px;
+            color: #555;
+            font-weight: bold;
+            margin-bottom: 15px;
+            margin-left: 5px;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            overflow-x: auto;
+            max-height: 60vh;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        #loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Admin BPS Batu</h2>
+        <button class="menu-btn active" onclick="switchTab('dashboard')">📊 Dashboard Grafik</button>
+        <button class="menu-btn" onclick="switchTab('datatable')">📋 Data Kunjungan</button>
+    </div>
+
+    <div class="main-content">
+        
+        <div class="header">
+            <h1 id="page-title">Dashboard Kunjungan</h1>
+            <button onclick="loadData()">🔄 Refresh Data</button>
+        </div>
+
+        <div id="loading">Memuat data dari server... Mohon tunggu.</div>
+
+        <div id="tab-dashboard" class="hidden">
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>Kunjungan Hari Ini</h3>
+                    <p id="countToday">0</p>
+                </div>
+                <div class="card">
+                    <h3>Kunjungan Bulan Ini</h3>
+                    <p id="countMonth">0</p>
+                </div>
+                <div class="card">
+                    <h3>Kunjungan Tahun Ini</h3>
+                    <p id="countYear">0</p>
+                </div>
+                <div class="card">
+                    <h3>Total Seluruh Kunjungan</h3>
+                    <p id="countTotal">0</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <button class="export-btn" onclick="exportChart('chartKunjunganBulan', 'Grafik_Kunjungan_Bulanan')">Unduh Grafik (PNG)</button>
+                <canvas id="chartKunjunganBulan" height="80"></canvas>
+            </div>
+
+            <div class="charts-row">
+                <div class="chart-half">
+                    <button class="export-btn" onclick="exportChart('chartJenis', 'Grafik_Jenis_Kunjungan')">Unduh (PNG)</button>
+                    <canvas id="chartJenis"></canvas>
+                </div>
+                <div class="chart-half">
+                    <button class="export-btn" onclick="exportChart('chartKepuasan', 'Grafik_Kepuasan')">Unduh (PNG)</button>
+                    <canvas id="chartKepuasan"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-datatable" class="hidden">
+            <div class="controls">
+                <input type="text" id="searchNama" placeholder="🔍 Cari Nama..." onkeyup="filterTable()">
+                
+                <input type="date" id="filterTanggal" onchange="filterTable()">
+                
+                <select id="filterBulan" onchange="filterTable()">
+                    <option value="">- Bulan -</option>
+                    <option value="1">Januari</option>
+                    <option value="2">Februari</option>
+                    <option value="3">Maret</option>
+                    <option value="4">April</option>
+                    <option value="5">Mei</option>
+                    <option value="6">Juni</option>
+                    <option value="7">Juli</option>
+                    <option value="8">Agustus</option>
+                    <option value="9">September</option>
+                    <option value="10">Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                </select>
+
+                <select id="filterTahun" onchange="filterTable()">
+                    <option value="">- Tahun -</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                </select>
+
+                <button class="btn-reset" onclick="resetFilter()">✖ Reset Filter</button>
+
+                <div class="export-group">
+                    <button class="btn-excel" onclick="exportToExcel()">📥 Excel</button>
+                    <button class="btn-pdf" onclick="exportToPDF()">📄 PDF</button>
+                </div>
+            </div>
+
+            <div class="data-info">
+                Menampilkan <span id="visibleCount" style="color: var(--primary-color);">0</span> 
+                dari <span id="totalCount" style="color: var(--primary-color);">0</span> data kunjungan.
+            </div>
+
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Waktu Kunjungan</th>
+                            <th>Nama</th>
+                            <th>Pekerjaan</th>
+                            <th>Institusi</th>
+                            <th>No HP / WA</th>
+                            <th>Keperluan</th>
+                            <th>Pegawai Dituju</th>
+                            <th>Keterangan</th>
+                            <th>Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- MASUKKAN URL APP SCRIPT ANDA DI BAWAH INI ---
+        const googleAppsScriptURL = "https://script.google.com/macros/s/AKfycby7NMGjQkV0BUuhsmmLSIZAYmV_CHOhiBJimVmQqER1Wy_eO1ZNZynz9HHcAtFS6E_CNQ/exec";
+
+        // Global Variables
+        let rawData = []; 
+        let chartBulanInstance = null;
+        let chartJenisInstance = null;
+        let chartKepuasanInstance = null;
+        let isInitialLoad = true; 
+
+        // --- FUNGSI PENERJEMAH TANGGAL LOKAL ---
+        function parseTanggalLokal(tglString) {
+            if (!tglString) return new Date("Invalid");
+            
+            let parsed = new Date(tglString);
+            if (!isNaN(parsed)) return parsed;
+
+            try {
+                let teks = tglString.toString();
+                let bagianTgl = teks.split(/[\s,]+/)[0]; 
+                let dmy = bagianTgl.split(/[-/]/); 
+                
+                if (dmy.length === 3) {
+                    return new Date(`${dmy[2]}-${dmy[1].padStart(2, '0')}-${dmy[0].padStart(2, '0')}T00:00:00`);
+                }
+            } catch(e) { console.error("Gagal membaca tanggal:", e); }
+            
+            return new Date("Invalid");
+        }
+
+        // Navigasi Tab
+        function switchTab(tabId) {
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-dashboard').classList.add('hidden');
+            document.getElementById('tab-datatable').classList.add('hidden');
+            
+            if(tabId === 'dashboard') {
+                event.target.classList.add('active');
+                document.getElementById('tab-dashboard').classList.remove('hidden');
+                document.getElementById('page-title').innerText = "Dashboard Grafik Kunjungan";
+            } else {
+                event.target.classList.add('active');
+                document.getElementById('tab-datatable').classList.remove('hidden');
+                document.getElementById('page-title').innerText = "Data Rekap Kunjungan";
+            }
+        }
+
+        // --- FETCH DATA DARI SPREADSHEET ---
+        function loadData() {
+            if (isInitialLoad) {
+                document.getElementById('loading').classList.remove('hidden');
+                document.getElementById('tab-dashboard').classList.add('hidden');
+                document.getElementById('tab-datatable').classList.add('hidden');
+            }
+
+            fetch(googleAppsScriptURL)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 1) {
+                        rawData = data.slice(1); 
+                        
+                        processDashboardCards();
+                        renderCharts();
+                        renderTable(rawData);
+
+                        if (isInitialLoad) {
+                            document.getElementById('loading').classList.add('hidden');
+                            document.querySelector('.menu-btn.active').click(); 
+                            isInitialLoad = false;
+                        }
+                    } else if (isInitialLoad) {
+                        document.getElementById('loading').innerText = "Belum ada data kunjungan.";
+                    }
+                })
+                .catch(err => {
+                    if(isInitialLoad) document.getElementById('loading').innerText = "Gagal memuat data.";
+                    console.error(err);
+                });
+        }
+
+        // --- LOGIKA DASHBOARD KARTU (AKUMULASI) ---
+        function processDashboardCards() {
+            const sekarang = new Date();
+            const tglHariIni = sekarang.getDate();
+            const blnHariIni = sekarang.getMonth() + 1;
+            const thnHariIni = sekarang.getFullYear();
+
+            let hariIni = 0, bulanIni = 0, tahunIni = 0;
+
+            rawData.forEach(row => {
+                const dateVal = parseTanggalLokal(row[0]); 
+                
+                if (!isNaN(dateVal)) {
+                    if (dateVal.getFullYear() === thnHariIni) {
+                        tahunIni++;
+                        if (dateVal.getMonth() + 1 === blnHariIni) {
+                            bulanIni++;
+                            if (dateVal.getDate() === tglHariIni) {
+                                hariIni++;
+                            }
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('countToday').innerText = hariIni;
+            document.getElementById('countMonth').innerText = bulanIni;
+            document.getElementById('countYear').innerText = tahunIni;
+            document.getElementById('countTotal').innerText = rawData.length;
+        }
+
+        // --- LOGIKA RENDER GRAFIK DENGAN CHART.JS ---
+        function renderCharts() {
+            const bulanLabels = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+            const dataBulanan = new Array(12).fill(0);
+            
+            let pst = 0, pegawai = 0, lainnya = 0;
+            let puas = 0, biasa = 0, kecewa = 0;
+
+            rawData.forEach(row => {
+                const dateVal = parseTanggalLokal(row[0]);
+                if (!isNaN(dateVal)) {
+                    dataBulanan[dateVal.getMonth()]++;
+                }
+
+                const keperluan = (row[5] || "").toLowerCase();
+                if (keperluan === 'pst') pst++;
+                else if (keperluan === 'pegawai') pegawai++;
+                else lainnya++;
+
+                const rating = (row[8] || "").toLowerCase();
+                if (rating === 'puas') puas++;
+                else if (rating === 'biasa') biasa++;
+                else if (rating === 'kecewa') kecewa++;
+            });
+
+            if(chartBulanInstance) chartBulanInstance.destroy();
+            if(chartJenisInstance) chartJenisInstance.destroy();
+            if(chartKepuasanInstance) chartKepuasanInstance.destroy();
+
+            const ctxBulan = document.getElementById('chartKunjunganBulan').getContext('2d');
+            chartBulanInstance = new Chart(ctxBulan, {
+                type: 'bar',
+                data: {
+                    labels: bulanLabels,
+                    datasets: [{
+                        label: 'Total Kunjungan',
+                        data: dataBulanan,
+                        backgroundColor: '#0056b3',
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Kunjungan Bulanan (Semua Tahun)' } } }
+            });
+
+            const ctxJenis = document.getElementById('chartJenis').getContext('2d');
+            chartJenisInstance = new Chart(ctxJenis, {
+                type: 'doughnut',
+                data: {
+                    labels: ['PST', 'Bertemu Pegawai', 'Lainnya'],
+                    datasets: [{
+                        data: [pst, pegawai, lainnya],
+                        backgroundColor: ['#28a745', '#17a2b8', '#ffc107']
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Jenis Kunjungan' } } }
+            });
+
+            const ctxKepuasan = document.getElementById('chartKepuasan').getContext('2d');
+            chartKepuasanInstance = new Chart(ctxKepuasan, {
+                type: 'pie',
+                data: {
+                    labels: ['Puas 🤩', 'Cukup 😐', 'Kurang 😞'],
+                    datasets: [{
+                        data: [puas, biasa, kecewa],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+                    }]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Tingkat Kepuasan' } } }
+            });
+        }
+
+        // --- FUNGSI RENDER TABEL & FILTER ---
+        function renderTable(dataArray) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = "";
+            let nomorUrut = 1;
+
+            for (let i = dataArray.length - 1; i >= 0; i--) {
+                const row = dataArray[i];
+                if (!row[0] && !row[1]) continue;
+
+                const tr = document.createElement('tr');
+                
+                let dateObj = parseTanggalLokal(row[0]);
+                if (!isNaN(dateObj)) {
+                    const yr = dateObj.getFullYear();
+                    const mo = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const da = String(dateObj.getDate()).padStart(2, '0');
+
+                    tr.setAttribute('data-full', `${yr}-${mo}-${da}`); 
+                    tr.setAttribute('data-bulan', dateObj.getMonth() + 1); 
+                    tr.setAttribute('data-tahun', yr); 
+                } else {
+                    tr.setAttribute('data-full', ""); tr.setAttribute('data-bulan', ""); tr.setAttribute('data-tahun', "");
+                }
+
+                tr.innerHTML = `<td>${nomorUrut++}</td>`;
+                for (let j = 0; j < 9; j++) {
+                    let cellText = row[j] || "-";
+                    tr.innerHTML += `<td>${cellText}</td>`;
+                }
+                tbody.appendChild(tr);
+            }
+            
+            filterTable(); 
+        }
+
+        // --- FUNGSI FILTER DAN MENGHITUNG JUMLAH DATA TAMPIL ---
+        function filterTable() {
+            const inputCari = document.getElementById('searchNama').value.toLowerCase();
+            const inputTgl = document.getElementById('filterTanggal').value; 
+            const inputBulan = document.getElementById('filterBulan').value;
+            const inputTahun = document.getElementById('filterTahun').value;
+
+            const rows = document.querySelectorAll('#tableBody tr');
+            let visibleCount = 0; 
+
+            rows.forEach(row => {
+                const teksBaris = row.innerText.toLowerCase();
+                const tglData = row.getAttribute('data-full');
+                const bulanData = row.getAttribute('data-bulan');
+                const tahunData = row.getAttribute('data-tahun');
+
+                let cocokCari = teksBaris.includes(inputCari);
+                let cocokTgl = inputTgl === "" || tglData === inputTgl;
+                let cocokBulan = inputBulan === "" || bulanData === inputBulan;
+                let cocokTahun = inputTahun === "" || tahunData === inputTahun;
+
+                if (cocokCari && cocokTgl && cocokBulan && cocokTahun) {
+                    row.style.display = "";
+                    visibleCount++; 
+                } else {
+                    row.style.display = "none";
+                }
+            });
+
+            document.getElementById('visibleCount').innerText = visibleCount;
+            document.getElementById('totalCount').innerText = rows.length;
+        }
+
+        // --- FUNGSI MEMBERSIHKAN FILTER (RESET) ---
+        function resetFilter() {
+            // Kosongkan semua input filter
+            document.getElementById('searchNama').value = "";
+            document.getElementById('filterTanggal').value = "";
+            document.getElementById('filterBulan').value = "";
+            document.getElementById('filterTahun').value = "";
+            
+            // Panggil ulang fungsi filterTable agar tabel mereset tampilannya
+            filterTable();
+        }
+
+        function exportChart(canvasId, filename) {
+            const link = document.createElement('a');
+            link.href = document.getElementById(canvasId).toDataURL('image/png', 1.0);
+            link.download = filename + '.png';
+            link.click();
+        }
+
+        function exportToExcel() {
+            const tabel = document.getElementById('dataTable');
+            const wb = XLSX.utils.table_to_book(tabel, {sheet: "Data Kunjungan"});
+            XLSX.writeFile(wb, "Data_Kunjungan_BPS.xlsx");
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'pt', 'a4'); 
+            doc.text("Rekap Data Kunjungan BPS Kota Batu", 40, 40);
+            doc.autoTable({ 
+                html: '#dataTable',
+                startY: 60,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [0, 86, 179] }
+            });
+            doc.save("Data_Kunjungan_BPS.pdf");
+        }
+
+        // Auto Load saat awal dibuka
+        window.onload = function() {
+            loadData();
+            setInterval(loadData, 30000); // Refresh tiap 30 detik
+        };
+    </script>
+</body>
+</html>
